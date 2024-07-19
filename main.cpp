@@ -43,6 +43,24 @@ private:
 
 };
 
+
+//Define the drived class and define the virtual functions
+class UbuntuInterfaceImpl : public UbuntuInterface {
+public:
+    UbuntuInterfaceImpl() {}
+    std::string getSupportedReleases() const override{
+        return std::string("Test getSupportedReleases");
+    }
+
+    std::string getCurrentLTSVersion() const override{
+        return std::string("Test getCurrentLTSVersion");
+    }
+
+    std::string getDisk1ImgSHA256(const std::string& release) const override{
+        return std::string("Test getDisk1ImgSHA256");
+    }
+};
+
 // Callback function to write data to a string
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
