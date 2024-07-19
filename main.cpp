@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <curl/curl.h>
+#include <vector>
 
 // A class to record the neccessary information of a product
 class UbuntuOs {
@@ -20,6 +21,27 @@ private:
 
 };
 
+
+// An interface to define some virtual function (based on project description)
+// This part is a pretty ambigous for me! the role of Interface! why it is neccessary!
+// I think: you want to test my knowledge about the Interface and virtual function. ;)
+class UbuntuInterface {
+public: 
+    // Virtual destructor for proper cleanup of derived classes
+    virtual ~UbuntuInterface() =  default;
+
+    // Return a list of all currently supported Ubuntu releases.
+    virtual std::string getSupportedReleases() const = 0;
+
+    // Return the current Ubuntu LTS version.    
+    virtual std::string getCurrentLTSVersion() const = 0;
+
+    // Return the sha256 of the disk1.img item of a given Ubuntu release.
+    virtual std::string getDisk1ImgSHA256(const std::string& release) const = 0; 
+private:
+    std::vector<UbuntuOs> ubuntuOsList;
+
+};
 
 // Callback function to write data to a string
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
