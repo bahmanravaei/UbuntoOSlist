@@ -2,6 +2,25 @@
 #include <iostream>
 #include <curl/curl.h>
 
+// A class to record the neccessary information of a product
+class UbuntuOs {
+public:
+    // Constructor
+    UbuntuOs(const std::string&p_name, const std::string& a, bool s, const std::string& r, const std::string& d, const std::string& p)
+        : product_name(p_name), arch(a), supported(s), release_title(r), disk1_img_sha256(d), pubname(p) {}
+private:
+    //TODO: other variable field can be added for the future application
+    std::string product_name;
+    std::string arch;
+    bool supported;
+    std::string release_title;
+    std::string disk1_img_sha256;
+    std::string pubname;
+
+
+};
+
+
 // Callback function to write data to a string
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
