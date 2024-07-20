@@ -41,13 +41,13 @@ public:
     virtual ~UbuntuInterface() =  default;
 
     // Return a list of all currently supported Ubuntu releases.
-    virtual std::string getSupportedReleases() const = 0;
+    virtual std::vector<std::string> getSupportedReleases() = 0 ;
 
     // Return the current Ubuntu LTS version.    
-    virtual std::string getCurrentLTSVersion() const = 0;
+    virtual std::string getCurrentLTSVersion() = 0;
 
     // Return the sha256 of the disk1.img item of a given Ubuntu release.
-    virtual std::string getDisk1ImgSHA256(const std::string& release) const = 0; 
+    virtual std::string getDisk1ImgSHA256(const std::string& release) = 0; 
 //private:
     std::vector<UbuntuOs> ubuntuOsList;
 
@@ -58,15 +58,23 @@ public:
 class UbuntuInterfaceImpl : public UbuntuInterface {
 public:
     UbuntuInterfaceImpl() {}
-    std::string getSupportedReleases() const override{
-        return std::string("Test getSupportedReleases");
+    std::vector<std::string> getSupportedReleases() override {
+        std::vector<std::string> productNames;
+        for (auto& os : ubuntuOsList) {
+            //std::cout<< os.get_product_name()<< "\t";
+            //bool supported = os.get_supported();
+            if(os.get_supported()){
+                productNames.push_back(os.get_product_name());
+            }
+        }
+        return productNames;
     }
 
-    std::string getCurrentLTSVersion() const override{
+    std::string getCurrentLTSVersion() override{
         return std::string("Test getCurrentLTSVersion");
     }
 
-    std::string getDisk1ImgSHA256(const std::string& release) const override{
+    std::string getDisk1ImgSHA256(const std::string& release) override{
         return std::string("Test getDisk1ImgSHA256");
     }
     
@@ -169,6 +177,13 @@ std::string fetch_url_data() {
     return readBuffer;
 }
 
+void print_list(std::vector<std::string> item_list)
+{
+    for (const auto& name : item_list) {
+            std::cout << name << std::endl;
+        }
+}
+
 
 int main(int argc, char* argv[]) {
 
@@ -185,7 +200,13 @@ int main(int argc, char* argv[]) {
             std::cout<<"Something is wrong!"<< std::endl;
         else{
             ubuntuOsList = Ubuntu_data_list->extractUbuntuOsData(results);
-            Ubuntu_data_list->printOsList();
+            //Ubuntu_data_list->printOsList();
+            std::string option = argv[1];
+            if(option.compare("-list")==0){
+                std::cout<<"List of all currently supported Ubuntu releases!"<<std::endl;
+                std::vector<std::string> productNames = Ubuntu_data_list->getSupportedReleases();
+                print_list(productNames);
+            }
         }
 
     }
