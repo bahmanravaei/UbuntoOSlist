@@ -13,13 +13,16 @@ public:
     UbuntuOs(const std::string&p_name, const std::string& a, bool s, const std::string& r, const std::string& d, const std::string& p)
         : product_name(p_name), arch(a), supported(s), release_title(r), disk1_img_sha256(d), pubname(p) {}
 
+    // Getter methods for product attributes
     std::string get_product_name(){return product_name;} 
     std::string get_arch(){return arch;}
     bool get_supported(){return supported;} 
     std::string get_release_title(){return release_title;} 
     std::string get_disk1_img_sha256(){return disk1_img_sha256;} 
     std::string get_pubname(){return pubname;}       
+
 private:
+    // Product attributes
     //TODO: other variable field can be added for the future application
     std::string product_name;
     std::string arch;
@@ -49,15 +52,19 @@ public:
     // Return the sha256 of the disk1.img item of a given Ubuntu release.
     virtual std::string getDisk1ImgSHA256(const std::string& release) = 0; 
 //private:
+    // List to store Ubuntu OS objects
     std::vector<UbuntuOs> ubuntuOsList;
 
 };
 
 
-//Define the drived class and define the virtual functions
+// Define the derived class and implement the virtual functions
 class UbuntuInterfaceImpl : public UbuntuInterface {
 public:
+    // Constructor
     UbuntuInterfaceImpl() {}
+    
+    // Implement getSupportedReleases to return names of supported products
     std::vector<std::string> getSupportedReleases() override {
         std::vector<std::string> productNames;
         for (auto& os : ubuntuOsList) {
@@ -70,6 +77,7 @@ public:
         return productNames;
     }
 
+    // Implement getCurrentLTSVersion to return names of LTS products
     std::vector<std::string> getCurrentLTSVersion() override {
         std::vector<std::string> productNames;
         for (auto& os : ubuntuOsList) {
@@ -83,6 +91,8 @@ public:
         return productNames;
     }
 
+
+    // Implement getDisk1ImgSHA256 to return the sha256 of a specific product's disk1.img
     std::string getDisk1ImgSHA256(const std::string& release) override{
         std::string sha256="The wrong product name";
         for (auto& os : ubuntuOsList) {
@@ -93,16 +103,13 @@ public:
         return sha256;
     }
     
-    //Function to extract the data from the string and parse it and populate the ubuntuOsList
+    // Function to extract data from a JSON string and populate the ubuntuOsList
     std::vector<UbuntuOs> extractUbuntuOsData(std::string& jsonString) {
-        
- 
         
         // Parse the JSON string
         auto j = json::parse(jsonString);
 
-        //return ubuntuOsList;
-
+    
         // Iterate over the products
         for (const auto& [key, product] : j["products"].items()) {
 
@@ -110,14 +117,14 @@ public:
             std::string arch = product["arch"];
             std::string release_title = product["release_title"];
             bool support = false;
-            if (product.contains("supported")){
-                //std::cout<<"supported: "<<product["supported"];
-                support = product["supported"];
-                //std::cout<< "---" <<support<< std::endl;
-            }
-            
             std::string disk1_img_sha256="";
             std::string pubname = "";
+    
+            if (product.contains("supported")){
+                support = product["supported"];
+            }
+            
+            
             // Extract the sha256 of "disk1.img"
             for (auto& version : product["versions"].items()) {
                 auto items = version.value()["items"];
@@ -129,21 +136,17 @@ public:
                 pubname = version.value()["pubname"];
                 
             }
-            //std::cout <<"product_name: " << product_name << std::endl ;
-            //std::cout << "\t" << arch << ", " << release_title << ", " << disk1_img_sha256 << ", " << std::endl;
-            //std::cout<<std::endl <<"\t  pubname:" << pubname << std::endl;
-
-            //continue;
-
+            
             // Create an instance of UbuntuOs and add it to the list
             UbuntuOs ubuntuOs(product_name, arch, support, release_title, disk1_img_sha256, pubname);
             ubuntuOsList.push_back(ubuntuOs);
 
-            //std::cout<<"+++ \t end of loop\t +++ \n";
         }
         return ubuntuOsList;
     }
 
+
+    // Function to print the list of all OS products
     void printOsList() {
         std::cout<< "List of all OS products:"<<std::endl;
         for (auto& os : ubuntuOsList) {
@@ -161,7 +164,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     return size * nmemb;
 }
 
-// Download the json data from the url
+// Download the json data from the URL
 std::string fetch_url_data() {
     CURL* curl;
     CURLcode res;
@@ -192,6 +195,8 @@ std::string fetch_url_data() {
     return readBuffer;
 }
 
+
+// Function to print a list of strings -  This funtion is used to print the product_name list
 void print_list(std::vector<std::string> item_list)
 {
     for (const auto& name : item_list) {
@@ -201,33 +206,42 @@ void print_list(std::vector<std::string> item_list)
 
 
 int main(int argc, char* argv[]) {
-
+    // If there are no command line arguments, display hints for the user.
     if(argc==1){
-        std::cout << "\t -list: list of all currently supported Ubuntu releases. \n\t -lts: the current Ubuntu LTS version \n\t -sha256: the sha256 of the disk1.img item of a given Ubuntu release. " << std::endl;
+        std::cout << "\t -list: list of all currently supported Ubuntu releases. \n\t -lts: the current Ubuntu LTS version \n\t -sha256 [product_name]: the sha256 of the disk1.img item of a given Ubuntu release. " << std::endl;
 
-    }else{
+    }
+    else{
+        // There is a command line argument, and based on this argument, a specific task will be executed.
+
+        // Create an instance of UbuntuInterfaceImpl as core object to call different functions on it.
         UbuntuInterfaceImpl* Ubuntu_data_list = new UbuntuInterfaceImpl();
         std::vector<UbuntuOs> ubuntuOsList;
 
+        // Fetch the json data from the specified URL.
         std::string results=fetch_url_data();
-        //std::cout<<json_string;
+        
         if (results.compare("OPS")==0)
             std::cout<<"Something is wrong!"<< std::endl;
         else{
+
+            // Extract data from the returned json string and populate the Ubuntu_data_list with information about different products.
             ubuntuOsList = Ubuntu_data_list->extractUbuntuOsData(results);
             //Ubuntu_data_list->printOsList();
             std::string option = argv[1];
+            
+            // Return a list of all currently supported Ubuntu releases.
             if(option.compare("-list")==0){
                 std::cout<<"List of all currently supported Ubuntu releases!"<<std::endl;
                 std::vector<std::string> productNames = Ubuntu_data_list->getSupportedReleases();
                 print_list(productNames);
-            }
+            }// Return the current Ubuntu LTS version.
             else if(option.compare("-lts")==0){
                 std::cout<<"The current LTS version!"<<std::endl;
                 std::vector<std::string> productNames = Ubuntu_data_list->getCurrentLTSVersion();
                 print_list(productNames);
 
-            }
+            } // Return the sha256 of the disk1.img item of a given Ubuntu release.
             else if(option.compare("-sha256")==0){
                 if(argc==2){
                     std::cout<<"Specify the name of a product!" <<std::endl;
@@ -237,6 +251,9 @@ int main(int argc, char* argv[]) {
                     std::cout<< "Sha256 of the disk1.img item of a given Ubuntu release:\n";
                     std::cout<< sha256 << std::endl;
                 }
+            }
+            else{
+                std::cout<<"Wrong command line argument. please check it again!"<< std::endl;
             }
         }
 
