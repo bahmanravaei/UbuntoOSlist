@@ -63,6 +63,11 @@ class UbuntuInterfaceImpl : public UbuntuInterface {
 public:
     // Constructor
     UbuntuInterfaceImpl() {}
+
+    ~UbuntuInterfaceImpl() {
+        ubuntuOsList.clear();
+        ubuntuOsList.shrink_to_fit();                    
+    }
     
     // Implement getSupportedReleases to return names of supported products
     std::vector<std::string> getSupportedReleases() override {
@@ -256,7 +261,8 @@ int main(int argc, char* argv[]) {
                 std::cout<<"Wrong command line argument. please check it again!"<< std::endl;
             }
         }
+        delete Ubuntu_data_list;
 
-    }
+    }    
     return 0;
 }
