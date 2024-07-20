@@ -3,6 +3,7 @@
 #include <curl/curl.h>
 #include <vector>
 #include <nlohmann/json.hpp>
+#include <cstdlib>
 using json = nlohmann::json;
 
 
@@ -110,42 +111,48 @@ public:
     
     // Function to extract data from a JSON string and populate the ubuntuOsList
     std::vector<UbuntuOs> extractUbuntuOsData(std::string& jsonString) {
+
+        try{
+
+            // Parse the JSON string
+            auto j = json::parse(jsonString);
+
+    
+            // Iterate over the products
+            for (const auto& [key, product] : j["products"].items()) {
+
+                std::string product_name = key;  // Get the product name (key)
+                std::string arch = product["arch"];
+                std::string release_title = product["release_title"];
+                bool support = false;
+                std::string disk1_img_sha256="";
+                std::string pubname = "";
         
-        // Parse the JSON string
-        auto j = json::parse(jsonString);
-
-    
-        // Iterate over the products
-        for (const auto& [key, product] : j["products"].items()) {
-
-            std::string product_name = key;  // Get the product name (key)
-            std::string arch = product["arch"];
-            std::string release_title = product["release_title"];
-            bool support = false;
-            std::string disk1_img_sha256="";
-            std::string pubname = "";
-    
-            if (product.contains("supported")){
-                support = product["supported"];
-            }
-            
-            
-            // Extract the sha256 of "disk1.img"
-            for (auto& version : product["versions"].items()) {
-                auto items = version.value()["items"];
-                
-                if (items.contains("disk1.img")) {
-                    disk1_img_sha256 = items["disk1.img"]["sha256"];
+                if (product.contains("supported")){
+                    support = product["supported"];
                 }
-                // Extract the pubname
-                pubname = version.value()["pubname"];
                 
-            }
-            
-            // Create an instance of UbuntuOs and add it to the list
-            UbuntuOs ubuntuOs(product_name, arch, support, release_title, disk1_img_sha256, pubname);
-            ubuntuOsList.push_back(ubuntuOs);
+                
+                // Extract the sha256 of "disk1.img"
+                for (auto& version : product["versions"].items()) {
+                    auto items = version.value()["items"];
+                    
+                    if (items.contains("disk1.img")) {
+                        disk1_img_sha256 = items["disk1.img"]["sha256"];
+                    }
+                    // Extract the pubname
+                    pubname = version.value()["pubname"];
+                    
+                }
+                
+                // Create an instance of UbuntuOs and add it to the list
+                UbuntuOs ubuntuOs(product_name, arch, support, release_title, disk1_img_sha256, pubname);
+                ubuntuOsList.push_back(ubuntuOs);
 
+            }
+        } catch(...){
+            std::cerr << "Json parse error!"<<std::endl;
+            exit(EXIT_FAILURE);
         }
         return ubuntuOsList;
     }
@@ -179,23 +186,33 @@ std::string fetch_url_data() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     curl = curl_easy_init();
 
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "https://cloud-images.ubuntu.com/releases/streams/v1/com.ubuntu.cloud:released:download.json");
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-        res = curl_easy_perform(curl);
+    try{
+        if(curl) {
+            curl_easy_setopt(curl, CURLOPT_URL, "https://cloud-images.ubuntu.com/releases/streams/v1/com.ubuntu.cloud:released:download.json");
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+            res = curl_easy_perform(curl);
 
-        if(res != CURLE_OK) {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            return "OPS";
-        } else {
-            //std::cout << "Response Data: " << readBuffer << std::endl;
-            return readBuffer;
+            if(res != CURLE_OK) {
+                throw std::runtime_error("CURLE PROBLEM");
+            } else {
+                //std::cout << "Response Data: " << readBuffer << std::endl;
+                return readBuffer;
+            }
+
+            curl_easy_cleanup(curl);
         }
-
-        curl_easy_cleanup(curl);
     }
-
+    catch (const std::runtime_error& e) {
+        // Code to handle the exception
+        std::cerr<< "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        exit(EXIT_FAILURE);
+    }catch (...) {
+        // Code to handle any other exceptions
+        std::cerr << "Caught an unknown exception" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    
     curl_global_cleanup();
     return readBuffer;
 }
