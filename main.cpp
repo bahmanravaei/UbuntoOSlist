@@ -44,7 +44,7 @@ public:
     virtual std::vector<std::string> getSupportedReleases() = 0 ;
 
     // Return the current Ubuntu LTS version.    
-    virtual std::string getCurrentLTSVersion() = 0;
+    virtual std::vector<std::string> getCurrentLTSVersion() = 0;
 
     // Return the sha256 of the disk1.img item of a given Ubuntu release.
     virtual std::string getDisk1ImgSHA256(const std::string& release) = 0; 
@@ -70,8 +70,17 @@ public:
         return productNames;
     }
 
-    std::string getCurrentLTSVersion() override{
-        return std::string("Test getCurrentLTSVersion");
+    std::vector<std::string> getCurrentLTSVersion() override {
+        std::vector<std::string> productNames;
+        for (auto& os : ubuntuOsList) {
+            //std::cout<< os.product_name<< "\t";
+            if(os.get_supported()){
+                if(os.get_release_title().find("LTS")){
+                    productNames.push_back(os.get_product_name());
+                }
+            }
+        }        
+        return productNames;
     }
 
     std::string getDisk1ImgSHA256(const std::string& release) override{
@@ -206,6 +215,12 @@ int main(int argc, char* argv[]) {
                 std::cout<<"List of all currently supported Ubuntu releases!"<<std::endl;
                 std::vector<std::string> productNames = Ubuntu_data_list->getSupportedReleases();
                 print_list(productNames);
+            }
+            else if(option.compare("-lts")==0){
+                std::cout<<"The current LTS version!"<<std::endl;
+                std::vector<std::string> productNames = Ubuntu_data_list->getCurrentLTSVersion();
+                print_list(productNames);
+
             }
         }
 
