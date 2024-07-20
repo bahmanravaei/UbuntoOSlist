@@ -84,7 +84,13 @@ public:
     }
 
     std::string getDisk1ImgSHA256(const std::string& release) override{
-        return std::string("Test getDisk1ImgSHA256");
+        std::string sha256="The wrong product name";
+        for (auto& os : ubuntuOsList) {
+            if(os.get_product_name().compare(release)==0){
+                sha256 = os.get_disk1_img_sha256();
+            }
+        }
+        return sha256;
     }
     
     //Function to extract the data from the string and parse it and populate the ubuntuOsList
@@ -221,6 +227,16 @@ int main(int argc, char* argv[]) {
                 std::vector<std::string> productNames = Ubuntu_data_list->getCurrentLTSVersion();
                 print_list(productNames);
 
+            }
+            else if(option.compare("-sha256")==0){
+                if(argc==2){
+                    std::cout<<"Specify the name of a product!" <<std::endl;
+                }else if(argc==3){
+                    std::string a_product = argv[2];
+                    std::string sha256 = Ubuntu_data_list->getDisk1ImgSHA256(a_product);
+                    std::cout<< "Sha256 of the disk1.img item of a given Ubuntu release:\n";
+                    std::cout<< sha256 << std::endl;
+                }
             }
         }
 
